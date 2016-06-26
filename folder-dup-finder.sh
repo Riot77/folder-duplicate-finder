@@ -1,31 +1,38 @@
 #!/bin/bash
-shopt -s dotglob
+IFS=$(echo -en "\n\b")
+IFS="
+"
+#shopt -s dotglob
 RED='\033[0;31m'
-RED='\033[0;32m'
+GREEN='\033[0;32m'
 NC='\033[0m' # No Color
-mainDir=${1}
-allFolders=`find $mainDir -type d`
+mainDir="${@}"
+allFolders="`find "${mainDir}" -type d`"
+CountAllFolders=`echo "${allFolders}" | wc -l`
 line=0
-LogFile=folder-search-`date +%Y%m%d-%H%M%S`.log
+#LogFile=folder-`date +%Y%m%d-%H%M%S`.log
+LogFile=folder.log
 echo "" > ${LogFile}
 for i in ${allFolders}; do
+   # echo $i
    line=$((line+1))
-   echo ${line}
+   echo -n ${line}
    for j in `echo "${allFolders}" | tail -n +${line}`; do
-      #echo comparing $i and $j
       [[ "${i}" != "${j}" ]] && {
-         DIFF=`diff ${i} ${j}`
+	 #echo aaa command DIFF=diff "${i}" "${j}"
+         DIFF=`diff "${i}" "${j}"`
          [[ "$?" -eq "0" ]] && {
             echo -e "${GREEN} 100% same ${i} ${j} ${NC}"
             echo "100% same ${i} ${j}" >> ${LogFile}
          } || {
             LinesInDiff=`echo "${DIFF}" | wc -l` # Number of lines is equal to different files 
-            FilesInFolder1=`ls -1 ${i} | wc -l`
-            FilesInFolder2=`ls -1 ${j} | wc -l`
+            FilesInFolder1=`ls -1 "${i}" | wc -l`
+            FilesInFolder2=`ls -1 "${j}" | wc -l`
             TotalFiles=`echo "${FilesInFolder1} + ${FilesInFolder2}" | bc -l`
             Similarity=`echo "1 - (${LinesInDiff} / ${TotalFiles})" | bc -l`
-            echo "Total files: $TotalFiles, difffiles: $LinesInDiff, similarity: $Similarity"
-            echo -e "Similar ${Similarity}% \t ${i} \t ${j}"
+            Percentage=`echo "scale=4; ${line}/${CountAllFolders}" | bc -l`
+            #echo "Total files: $TotalFiles, difffiles: $LinesInDiff, similarity: $Similarity"
+            echo -e "${Percentage}% - similar ${Similarity}% \t ${i} \t ${j}"
          }
       }
    done 
